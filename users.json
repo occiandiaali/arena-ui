@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "username": "Alice",
+    "avatar": "https://i.pravatar.cc/150?img=1",
+    "details": "Loves hiking and coffee."
+  },
+  {
+    "id": 2,
+    "username": "Bob",
+    "avatar": "https://i.pravatar.cc/150?img=2",
+    "details": "Enjoys painting and jazz."
+  },
+  {
+    "id": 3,
+    "username": "Charlie",
+    "avatar": "https://i.pravatar.cc/150?img=3",
+    "details": "Tech geek and foodie."
+  },
+  {
+    "id": 4,
+    "username": "Diana",
+    "avatar": "https://i.pravatar.cc/150?img=4",
+    "details": "Yoga instructor, loves travel."
+  },
+  {
+    "id": 5,
+    "username": "Ethan",
+    "avatar": "https://i.pravatar.cc/150?img=5",
+    "details": "Runner and gamer."
+  },
+  {
+    "id": 6,
+    "username": "Fiona",
+    "avatar": "https://i.pravatar.cc/150?img=6",
+    "details": "Bookworm and baker."
+  },
+  {
+    "id": 7,
+    "username": "George",
+    "avatar": "https://i.pravatar.cc/150?img=7",
+    "details": "Musician and cyclist."
+  },
+  {
+    "id": 8,
+    "username": "Hannah",
+    "avatar": "https://i.pravatar.cc/150?img=8",
+    "details": "Photographer and traveler."
+  },
+  {
+    "id": 9,
+    "username": "Ian",
+    "avatar": "https://i.pravatar.cc/150?img=9",
+    "details": "Chef and nature lover."
+  },
+  {
+    "id": 10,
+    "username": "Jane",
+    "avatar": "https://i.pravatar.cc/150?img=10",
+    "details": "Designer and tea enthusiast."
+  },
+  {
+    "id": 11,
+    "username": "Papillo",
+    "avatar": "https://i.pravatar.cc/150?img=11",
+    "details": "Ex-footballer."
+  },
+  {
+    "id": 12,
+    "username": "KonjiKing",
+    "avatar": "https://i.pravatar.cc/150?img=12",
+    "details": "Porn star."
+  },
+  {
+    "id": 13,
+    "username": "Utazi",
+    "avatar": "https://i.pravatar.cc/150?img=13",
+    "details": "Part-time hustler"
+  },
+  {
+    "id": 14,
+    "username": "FineSexy",
+    "avatar": "https://i.pravatar.cc/150?img=14",
+    "details": "Anywhere belle face"
+  },
+  {
+    "id": 15,
+    "username": "Thanos666",
+    "avatar": "https://i.pravatar.cc/150?img=15",
+    "details": "Painter"
+  }
+]

@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Users</title>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --card: #fff;
+        --text: #1d2330;
+        --muted: #6b7385;
+        --accent: #4f46e5;
+        --border: #e5e7ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14161c;
+          --card: #1e212a;
+          --text: #eef0f5;
+          --muted: #9aa1b2;
+          --border: #2b2f3a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      /* Lock page scroll while any modal is open */
+      body:has(dialog[open]) {
+        overflow: hidden;
+      }
+
+      header {
+        padding: 2rem 1rem 1rem;
+        text-align: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.75rem;
+      }
+
+      /* ---------- Responsive grid ---------- */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.25rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.25rem;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      }
+      .card:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--border);
+        margin-bottom: 0.75rem;
+      }
+      .card h2 {
+        margin: 0 0 0.25rem;
+        font-size: 1.1rem;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+      }
+      .details {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 0;
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        justify-content: center;
+        margin-top: 0.5rem;
+      }
+      .tag {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+        color: var(--accent);
+      }
+
+      .sentinel,
+      .status {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: var(--muted);
+        padding: 1.5rem 0;
+      }
+      .sentinel .loading {
+        display: none;
+      }
+      .sentinel.htmx-request .loading {
+        display: inline;
+      }
+      .sentinel.htmx-request .idle {
+        display: none;
+      }
+      .error {
+        color: #dc2626;
+      }
+
+      /* ---------- Buttons ---------- */
+      .btn {
+        font: inherit;
+        padding: 0.55rem 1rem;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        text-decoration: none;
+        display: inline-block;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .btn.primary:hover {
+        filter: brightness(1.1);
+      }
+      button.retry {
+        margin-left: 0.5rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 8px;
+      }
+
+      /* ---------- Dialogs (shared) ---------- */
+      dialog {
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 0;
+      }
+      dialog::backdrop {
+        background: rgba(10, 12, 18, 0.6);
+        backdrop-filter: blur(2px);
+      }
+      dialog[open] {
+        animation: pop 0.18s ease;
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /* ---------- Details modal ---------- */
+      #details-modal {
+        width: min(480px, calc(100vw - 2rem));
+        max-height: calc(100vh - 2rem);
+        border-radius: 18px;
+        overflow: auto;
+      }
+      .modal-body {
+        padding: 2rem 1.5rem 1.5rem;
+        text-align: center;
+        position: relative;
+      }
+      .modal-close {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.6rem;
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        background: var(--bg);
+        color: var(--text);
+      }
+      .modal-avatar {
+        width: 128px;
+        height: 128px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--border);
+        margin-bottom: 1rem;
+      }
+      #details-modal h2 {
+        margin: 0 0 0.25rem;
+        font-size: 1.5rem;
+      }
+      #details-modal .modal-text {
+        color: var(--muted);
+        margin: 0.75rem 0 0;
+        line-height: 1.5;
+      }
+      .modal-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 0.6rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      /* ---------- Full-screen web modal ---------- */
+      #web-modal {
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+      }
+      #web-modal[open] {
+        display: flex;
+        flex-direction: column;
+      }
+      .web-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.6rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--card);
+      }
+      .web-title {
+        flex: 1;
+        min-width: 0;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .web-frame-wrap {
+        position: relative;
+        flex: 1;
+        background: #fff;
+      }
+      #web-frame {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      .web-loading {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #6b7385;
+        background: #fff;
+        pointer-events: none;
+      }
+      .web-loading.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body hx-ext="json-cards">
+    <header><h1>Our Users</h1></header>
+    <main id="user-grid" class="grid" aria-live="polite"></main>
+
+    <!-- Details modal -->
+    <dialog id="details-modal" aria-labelledby="modal-name">
+      <div class="modal-body">
+        <button class="modal-close" type="button" data-close aria-label="Close">
+          &times;
+        </button>
+        <img
+          id="modal-avatar"
+          class="modal-avatar"
+          alt=""
+          width="128"
+          height="128"
+        />
+        <h2 id="modal-name"></h2>
+        <div id="modal-meta" class="meta"></div>
+        <p id="modal-details" class="modal-text"></p>
+        <div id="modal-tags" class="tags"></div>
+        <div class="modal-actions">
+          <button id="visit-btn" class="btn primary" type="button">
+            Visit website
+          </button>
+          <button class="btn" type="button" data-close>Close</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Full-screen external page modal -->
+    <dialog id="web-modal" aria-label="External website">
+      <div class="web-bar">
+        <button id="web-back" class="btn" type="button">&larr; Back</button>
+        <div id="web-title" class="web-title"></div>
+        <a id="web-newtab" class="btn" target="_blank" rel="noopener noreferrer"
+          >Open in new tab &#8599;</a
+        >
+        <button id="web-close" class="btn primary" type="button">Close</button>
+      </div>
+      <div class="web-frame-wrap">
+        <div id="web-loading" class="web-loading">Loading…</div>
+        <iframe
+          id="web-frame"
+          title="External website"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          referrerpolicy="no-referrer"
+        ></iframe>
+      </div>
+    </dialog>
+
+    <script>
+      /* ---------------- CONFIG ---------------- */
+      const CONFIG = {
+        USE_LOCAL: true, // true => users.json, false => Supabase
+        PAGE_SIZE: 9, //12,
+        LOCAL_URL: "users.json",
+        SUPABASE_URL: "https://YOUR-PROJECT.supabase.co",
+        SUPABASE_ANON_KEY: "YOUR-ANON-KEY", // anon/public key only (protect data with RLS)
+        // Columns to fetch from Supabase. Add e.g. ",website" if you add that column.
+        SUPABASE_SELECT: "id,username,sex,age,avatar,interests",
+        // External page opened by the "Visit website" button.
+        // A user's own `website` field wins; otherwise this template is used.
+        // {username} is URL-encoded and {id} is the user's id.
+        //
+        //EXTERNAL_URL_TEMPLATE: "https://example.com/?user={username}",
+        //EXTERNAL_URL_TEMPLATE: "https://arena-v2.puter.site/",
+        EXTERNAL_URL_TEMPLATE: "http://127.0.0.1:5000",
+      };
+
+      /* ---------------- STATE & HELPERS ---------------- */
+      const usersById = new Map(); // id -> user, filled as pages load
+
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+
+      const avatarOf = (u) =>
+        u.avatar ||
+        `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(u.username)}`;
+
+      const metaOf = (u) =>
+        [
+          u.age ? `${u.age} yrs` : "",
+          u.sex === "M" ? "Male" : u.sex === "F" ? "Female" : "",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
+      const tagsOf = (u) =>
+        Array.isArray(u.interests) && u.interests.length
+          ? u.interests
+              .map((t) => `<span class="tag">${esc(t)}</span>`)
+              .join("")
+          : "";
+
+      /* Resolve and validate the external URL (http/https only) */
+      function externalUrlFor(u) {
+        const raw =
+          u.website ||
+          CONFIG.EXTERNAL_URL_TEMPLATE.replace(
+            "{username}",
+            encodeURIComponent(u.username),
+          ).replace("{id}", encodeURIComponent(u.id));
+        try {
+          const url = new URL(raw);
+          return /^https?:$/.test(url.protocol) ? url.href : null;
+        } catch {
+          return null;
+        }
+      }
+
+      const pageUrl = (offset) =>
+        CONFIG.USE_LOCAL
+          ? `${CONFIG.LOCAL_URL}?offset=${offset}`
+          : `${CONFIG.SUPABASE_URL}/rest/v1/users` +
+            `?select=${CONFIG.SUPABASE_SELECT}` +
+            `&order=created_at.desc,id.asc` +
+            `&limit=${CONFIG.PAGE_SIZE}&offset=${offset}`;
+
+      const sentinelHTML = (offset) => `
+      <div class="sentinel"
+           hx-get="${esc(pageUrl(offset))}"
+           hx-trigger="revealed"
+           hx-swap="outerHTML"
+           data-offset="${offset}">
+        <span class="idle">Scroll for more…</span>
+        <span class="loading">Loading…</span>
+      </div>`;
+
+      const cardHTML = (u) => `
+      <article class="card" tabindex="0" role="button"
+               data-id="${esc(u.id)}" aria-label="View details for ${esc(u.username)}">
+        <img class="avatar" src="${esc(avatarOf(u))}" alt="" loading="lazy" width="96" height="96">
+        <h2>${esc(u.username)}</h2>
+        ${metaOf(u) ? `<div class="meta">${esc(metaOf(u))}</div>` : ""}
+        ${u.details ? `<p class="details">${esc(u.details)}</p>` : ""}
+        ${tagsOf(u) ? `<div class="tags">${tagsOf(u)}</div>` : ""}
+      </article>`;
+
+      /* ---------------- HTMX EXTENSION: JSON -> HTML ---------------- */
+      htmx.defineExtension("json-cards", {
+        transformResponse(text, xhr, elt) {
+          if (!elt.classList.contains("sentinel")) return text;
+
+          let users;
+          try {
+            users = JSON.parse(text);
+          } catch {
+            return `<div class="status error">Invalid response.</div>`;
+          }
+
+          const offset = parseInt(elt.dataset.offset, 10) || 0;
+          let hasMore;
+
+          if (CONFIG.USE_LOCAL) {
+            const total = users.length;
+            users = users.slice(offset, offset + CONFIG.PAGE_SIZE);
+            hasMore = offset + CONFIG.PAGE_SIZE < total;
+          } else {
+            hasMore = users.length === CONFIG.PAGE_SIZE;
+          }
+
+          if (!users.length && offset === 0)
+            return `<div class="status">No users found.</div>`;
+
+          users.forEach((u) => usersById.set(String(u.id), u)); // remember for the modal
+
+          //   return (
+          //     users.map(cardHTML).join("") +
+          //     (hasMore
+          //       ? sentinelHTML(offset + CONFIG.PAGE_SIZE)
+          //       : `<div class="status">You've reached the end 🎉</div>`)
+          //   );
+          return (
+            users.map(cardHTML).join("") +
+            (hasMore
+              ? sentinelHTML(offset + CONFIG.PAGE_SIZE)
+              : `<div class="status">THE END</div>`)
+          );
+        },
+      });
+
+      /* Supabase auth headers (Supabase requests only) */
+      document.body.addEventListener("htmx:configRequest", (e) => {
+        if (!CONFIG.USE_LOCAL) {
+          e.detail.headers["apikey"] = CONFIG.SUPABASE_ANON_KEY;
+          e.detail.headers["Authorization"] =
+            `Bearer ${CONFIG.SUPABASE_ANON_KEY}`;
+        }
+      });
+
+      /* Error handling with retry */
+      document.body.addEventListener("htmx:responseError", showError);
+      document.body.addEventListener("htmx:sendError", showError);
+      function showError(e) {
+        const el = e.detail.elt;
+        if (!el.classList.contains("sentinel")) return;
+        el.innerHTML = `<span class="error">Couldn't load users.</span>
+        <button class="btn retry" type="button">Retry</button>`;
+        el.querySelector(".retry").onclick = () => htmx.trigger(el, "revealed");
+      }
+
+      /* ---------------- MODALS ---------------- */
+      const detailsModal = document.getElementById("details-modal");
+      const webModal = document.getElementById("web-modal");
+      const webFrame = document.getElementById("web-frame");
+      const webLoading = document.getElementById("web-loading");
+      const visitBtn = document.getElementById("visit-btn");
+      let currentUser = null;
+
+      function openDetails(user) {
+        currentUser = user;
+        const avatar = document.getElementById("modal-avatar");
+        avatar.src = avatarOf(user);
+        avatar.alt = `${user.username}'s avatar`;
+        document.getElementById("modal-name").textContent = user.username;
+        document.getElementById("modal-meta").textContent = metaOf(user);
+        document.getElementById("modal-details").textContent =
+          user.details || "";
+        document.getElementById("modal-tags").innerHTML = tagsOf(user);
+        visitBtn.hidden = !externalUrlFor(user);
+        detailsModal.showModal();
+      }
+
+      // Dynamic room name generator
+      function generateRoomName() {
+        const words = [
+          "Sunset",
+          "Ocean",
+          "Mountain",
+          "Forest",
+          "Desert",
+          "Sky",
+          "River",
+          "Valley",
+        ];
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        const randomSuffix = Math.random().toString(36).slice(2, 7); // Generates a random string of 5 characters
+        return `${randomWord}-${randomSuffix}`;
+      }
+
+      function openWebModal(user) {
+        const url = externalUrlFor(user);
+        if (!url) return;
+        detailsModal.close(); // close details first…
+        const roomName = generateRoomName();
+        // const serverName = "https://colys-blindate.onrender.com/";
+        // document.getElementById("web-title").textContent =
+        //   `${user.username} — ${new URL(url).hostname}`;
+        document.getElementById("web-title").textContent =
+          `${user.username} — ${roomName}`;
+        document.getElementById("web-newtab").href = url;
+        webLoading.classList.remove("hidden");
+        webFrame.src = url;
+        webModal.showModal(); // …then open the full-screen modal
+      }
+
+      /* Open details from a card click or Enter/Space (event delegation) */
+      const grid = document.getElementById("user-grid");
+      const cardFrom = (e) => e.target.closest(".card");
+      grid.addEventListener("click", (e) => {
+        const card = cardFrom(e);
+        if (card) openDetails(usersById.get(card.dataset.id));
+      });
+      grid.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const card = cardFrom(e);
+        if (card) {
+          e.preventDefault();
+          openDetails(usersById.get(card.dataset.id));
+        }
+      });
+
+      /* Details modal: close buttons + backdrop click */
+      detailsModal.addEventListener("click", (e) => {
+        if (e.target === detailsModal || e.target.closest("[data-close]"))
+          detailsModal.close();
+      });
+      visitBtn.addEventListener(
+        "click",
+        () => currentUser && openWebModal(currentUser),
+      );
+
+      /* Web modal controls */
+      document
+        .getElementById("web-close")
+        .addEventListener("click", () => webModal.close());
+      document.getElementById("web-back").addEventListener("click", () => {
+        webModal.close();
+        if (currentUser) openDetails(currentUser);
+      });
+      webFrame.addEventListener("load", () => {
+        if (webFrame.src !== "about:blank") webLoading.classList.add("hidden");
+      });
+      /* Unload the page whenever the web modal closes (Esc, Close, or Back) */
+      webModal.addEventListener("close", () => {
+        webFrame.src = "about:blank";
+      });
+
+      /* ---------------- KICK OFF ---------------- */
+      grid.innerHTML = sentinelHTML(0);
+    </script>
+  </body>
+</html>
